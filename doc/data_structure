@@ -1,0 +1,40 @@
+{
+  "name": "vault name",
+  "signatures": {
+    "data_signature": "signature base64 based on signkey and sha256 digest of data",
+    "vaultconfig_signature": "signature base64 based on signkey and sha256 digest of all strings concatenated in this file, exept signatures"
+  },
+  "keysets": {
+    "signkey": "signkey base64 enc with sign_symkey",
+    "valkey": "validation key plain base64"
+  },
+  "users": {
+    "owner1": {
+      "data_symkey": "base64 symkey data encrypted with pubkey owner1",
+      "sign_symkey": "base64 symkey sign encrypted with pubkey owner1",
+      "val_signature": "base64 owner1 privkey based signature on validation key",
+      "user_pubkey": "base64 plain user public key"
+    },
+    "reader1": {
+      "data_symkey": "base64 symkey data encrypted with pubkey reader2",
+      "val_signature": "base64 reader1 privkey based signature on validation key",
+      "user_pubkey": "base64 plain user public key"
+    },
+    "reader2": {
+      "data_symkey": "base64 symkey data encrypted with pubkey reader2",
+      "val_signature": "base64 reader2 privkey based signature on validation key",
+      "user_pubkey": "base64 plain user public key"
+    }
+  },
+  "data": {
+    "decrypted_filename": "plop.bin"
+  },
+  "cryptoset": {
+    "signkey_init_vector": "init vector sym crypt signkey",
+    "signkey_cipher": "default aes-128-cbc",
+    "signkey_digest": "default sha256",
+    "data_init_vector": "base64 coded init_vector",
+    "data_cipher": "default aes-128-cbc",
+    "data_digest": "default sha256"
+  }
+}
