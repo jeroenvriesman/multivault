@@ -116,7 +116,7 @@ class MultiVault < Hashr_loader
       
       # the signature on the vault itself should be consistent and repetable, but hashes do not have any inherent order
       # so the digest is based on: a concatenated( sorted list of key/values concatenated ), again based on the values actualy in the vault.
-      # all except the signatures thmeselves are used to create the signature
+      # all except the data and signatures themselves are used to create the signature
       
       super( newvault )
     end if not options[ :action ][ :create ].nil?
