@@ -27,7 +27,7 @@
     }
   },
   "data": {
-    "decrypted_filename": "plop.bin"
+    "decrypted_filename": "plop.bin, or we might have encrypted_data"
   },
   "cryptoset": {
     "signkey_init_vector": "init vector sym crypt signkey",

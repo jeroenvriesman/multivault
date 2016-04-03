@@ -13,6 +13,15 @@
 require 'openssl'
 require 'json'
 require 'hashr'
+require 'base64'
+
+# setting defaults
+DEFAULT_CRYPTOSET = {
+  :signkey_cipher => 'aes-128-cbc',
+  :data_cipher => 'aes-128-cbc',
+  :signkey_digest => 'sha256',
+  :data_digest => 'sha256'
+}
 
 # this loads data into hashr, either from a file or from json data
 class Hashr_loader < Hashr
@@ -23,20 +32,66 @@ class Hashr_loader < Hashr
   end
 end
 
+# todo make global constant keytool
+
 class MultiVault < Hashr_loader
 
   # this loads multivault from a file, or creates a new one with a name
   # it loads the current user key or fails if no key is present
   # action can be: :load => 'file', :create => 'new name'
-  # :create_keys => 'username'? create keys op basis van global constant object
-  def initialize( action = {} )
-    super( :file => action[ :load ]  ) if not action[ :load ].nil?
+  # example mv = Multivault.new( :action => { :load => 'somevault' } )  ( or with , :cryptoset => { .... }
+  def initialize( options = { :action => {}, :cryptoset => {} } )
+    # load current user key if it exists
+    current_user_keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
+    current_user_info_file = File.join( ENV['HOME'], '.multivault', 'user_info' )
+    if File.exists?( current_user_keyfile )
+      @current_user_keyset = OpenSSL::PKey::RSA.new File.read( current_user_keyfile )
+      if File.exists?( current_user_info_file )
+      then
+        @user_info = Hashr.new( JSON.parse( IO.read( current_user_info_file ) ) )
+      else
+        # an exeption is raised if keyfile exists without user info
+        raise "Current user does not have an info file, please create one"
+      end
+    else
+      # cannot proceed without a keyfile
+      raise "Current user does not have a keyfile, please create one"
+    end    
+    # if action is load from file, then do so
+    super( :file => options[ :action ][ :load ]  ) if not options[ :action ][ :load ].nil?
+    # or create new vault
     begin
       newvault = Hashr.new
-      newvault.name = action[ :create ]
+      # set name
+      newvault.name = options[ :action ][ :create ]
+      # set cryptoset, merge default into cryptoset options
+      if options[ :cryptoset ].nil?
+        newvault.cryptoset = DEFAULT_CRYPTOSET
+      else
+        newvault.cryptoset = DEFAULT_CRYPTOSET.merge( options[ :cryptoset ] )
+      end
+      # create the current user, will be the only user and owner initialiy
+      newvault.users = { @user_info.name.to_sym => { :user_pubkey => Base64.strict_encode64( @current_user_keyset.public_key.to_der ) } }
+      
+      # create the symmetric key cipher to encrypt the sign key
+      signkey_cipher = OpenSSL::Cipher.new( newvault.cryptoset.signkey_cipher )
+      signkey_cipher.encrypt
+      # store the initialization vector (plain base64)
+      newvault.cryptoset.signkey_init_vector = Base64.strict_encode64( signkey_cipher.random_iv )
+      # store the symmetric key, but encrypt it with the current user public key, so only the current user can read it
+      newvault.users.send( @user_info.name.to_sym ).sign_symkey = Base64.strict_encode64( @current_user_keyset.public_encrypt( signkey_cipher.random_key ) )
+      
+      # create signkey, public part is validation key, private part will be encypted with signkey_cipher
+      signkeypair = OpenSSL::PKey::RSA.new( 4096 )
+      # store validation key (public part of signkey) in strict RFC 4648 to avoid problems with signature validation, 
+      # use DER format for the same reason (pem is not properly specified)
+      newvault.keysets = { :valkey => Base64.strict_encode64( signkeypair.public_key.to_der ) }
+      # encrypt private signkey with with sign_symkey and store base64
+      newvault.keysets.signkey = Base64.strict_encode64( signkey_cipher.update( signkeypair.to_der ) + signkey_cipher.final )
+
       
       super( newvault )
-    end if not action[ :create ].nil?
+    end if not options[ :action ][ :create ].nil?
   end
   
   
