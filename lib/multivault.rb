@@ -20,8 +20,11 @@ DEFAULT_CRYPTOSET = {
   :signkey_cipher => 'aes-128-cbc',
   :data_cipher => 'aes-128-cbc',
   :signkey_digest => 'sha256',
-  :data_digest => 'sha256'
+  :data_digest => 'sha256',
+  :valkey_digest => 'sha256'
 }
+
+DEFAULT_DATA = 'EMPTY'
 
 # this loads data into hashr, either from a file or from json data
 class Hashr_loader < Hashr
@@ -88,7 +91,32 @@ class MultiVault < Hashr_loader
       newvault.keysets = { :valkey => Base64.strict_encode64( signkeypair.public_key.to_der ) }
       # encrypt private signkey with with sign_symkey and store base64
       newvault.keysets.signkey = Base64.strict_encode64( signkey_cipher.update( signkeypair.to_der ) + signkey_cipher.final )
-
+      
+      # create the symmetric key cipher to encrypt the data
+      data_cipher = OpenSSL::Cipher.new( newvault.cryptoset.data_cipher )
+      data_cipher.encrypt
+      # store the initialization vector (plain base64)
+      newvault.cryptoset.data_init_vector = Base64.strict_encode64( data_cipher.random_iv )
+      # store the symmetric key, but encrypt it with the current user public key, so only the current user can read it
+      newvault.users.send( @user_info.name.to_sym ).data_symkey = Base64.strict_encode64( @current_user_keyset.public_encrypt( data_cipher.random_key ) )
+      
+      # encrypt the data
+      newvault.data = { :encrypted_data => Base64.strict_encode64( data_cipher.update( DEFAULT_DATA ) + data_cipher.final ) }
+      
+      # there are 3 type of signatures, the data signature, the validation key signature (oen for every user) and the vaultconfig signature.
+      # the validation key signature and the vaultconfig signature share the same cipher and digest algorithms
+      # note that signatures are derived from what is actualy in the vault, the Base64 encoded, encrypted data, not on the data or the encrypted data itself
+      
+      data_digest = OpenSSL::Digest.new( newvault.cryptoset.data_digest )
+      newvault.signatures = { :data_signature => Base64.strict_encode64( signkeypair.sign( data_digest, newvault.data.encrypted_data ) ) }
+      
+      # use the private key of the current user (owner) to sign the validation key, again on what is actualy in the vault (hte base64 encoded validation key)
+      valkey_digest = OpenSSL::Digest.new( newvault.cryptoset.valkey_digest )
+      newvault.users.send( @user_info.name.to_sym ).valkey_signature = Base64.strict_encode64( @current_user_keyset.sign( valkey_digest, newvault.keysets.valkey ) )
+      
+      # the signature on the vault itself should be consistent and repetable, but hashes do not have any inherent order
+      # so the digest is based on: a concatenated( sorted list of key/values concatenated ), again based on the values actualy in the vault.
+      # all except the signatures thmeselves are used to create the signature
       
       super( newvault )
     end if not options[ :action ][ :create ].nil?
