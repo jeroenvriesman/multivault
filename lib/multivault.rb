@@ -17,22 +17,51 @@ require 'base64'
 
 # setting defaults
 DEFAULT_CRYPTOSET = {
-  :signkey_cipher => 'aes-128-cbc',
-  :data_cipher => 'aes-128-cbc',
+  :signkey_cipher => 'aes-256-cbc',
+  :data_cipher => 'aes-256-cbc',
   :signkey_digest => 'sha256',
   :data_digest => 'sha256',
-  :valkey_digest => 'sha256'
+  :valkey_digest => 'sha256',
+  :vaultinfo_digest => 'sha256'
 }
 
 DEFAULT_DATA = 'EMPTY'
 
+# extend Hash with methods to produce repeatble and consistant digests
+class Hash
+
+  # iterate over all keys and yield the key + a digest of the value and 
+  def allkeys_valdigest( options = { :digest => DEFAULT_CRYPTOSET[ :vaultinfo_digest ] } )
+    each_key do |key|
+      if self[ key ].respond_to? ( :each )
+        yield key.to_s
+        self[ key ].allkeys_valdigest{ |out| yield out }
+      else
+        # concatenate key and value
+        yield key.to_s + self[ key ]
+      end
+    end
+  end
+  
+  def digestable( options = { :digest => DEFAULT_CRYPTOSET[ :vaultinfo_digest ] } )
+    # collect the keys + value digests
+    kdgs = []
+    allkeys_valdigest( :digest => options[ :digest ] ) { |kdg| kdgs << kdg }
+    # sort them, because the order of a hash is unspecified, concatenate for the digest
+    kdgs.sort.join
+  end
+  
+end
+
 # this loads data into hashr, either from a file or from json data
 class Hashr_loader < Hashr
+
   def initialize( source = {} )
     super( JSON.parse( IO.read( source[ :file ] ) ) ) if not source[ :file ].nil?
     super( JSON.parse( source[ :json ] ) ) if not source[ :json ].nil?
     super( source ) if source[ :file ].nil? and source[ :json ].nil?
   end
+
 end
 
 # todo make global constant keytool
@@ -110,16 +139,71 @@ class MultiVault < Hashr_loader
       data_digest = OpenSSL::Digest.new( newvault.cryptoset.data_digest )
       newvault.signatures = { :data_signature => Base64.strict_encode64( signkeypair.sign( data_digest, newvault.data.encrypted_data ) ) }
       
-      # use the private key of the current user (owner) to sign the validation key, again on what is actualy in the vault (hte base64 encoded validation key)
+      # use the private key of the current user (owner) to sign the validation key, again on what is actualy in the vault (the base64 encoded validation key)
       valkey_digest = OpenSSL::Digest.new( newvault.cryptoset.valkey_digest )
       newvault.users.send( @user_info.name.to_sym ).valkey_signature = Base64.strict_encode64( @current_user_keyset.sign( valkey_digest, newvault.keysets.valkey ) )
       
-      # the signature on the vault itself should be consistent and repetable, but hashes do not have any inherent order
-      # so the digest is based on: a concatenated( sorted list of key/values concatenated ), again based on the values actualy in the vault.
+      # the signature on the vault itself should be consistent and repeatable, but hashes do not have any inherent order
+      # so the digest is based on: a concatenated( sorted list of key/value concatenated ), again based on the values actualy in the vault.
       # all except the data and signatures themselves are used to create the signature
+      # the signature is make with signkey
+      vaultinfo_digest = OpenSSL::Digest.new( newvault.cryptoset.vaultinfo_digest )
+      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data  ).digestable ) )
       
       super( newvault )
     end if not options[ :action ][ :create ].nil?
+  end
+  
+  def validate_valkey
+    # check the signature of the validation key (public key of signkey), using the public key of the current user
+    # use the current user public key (derived from the private key) from disk, not from the vault itself!
+    valkey_digest = OpenSSL::Digest.new( self.cryptoset.valkey_digest )
+    @current_user_keyset.verify( valkey_digest, Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).valkey_signature ), self.keysets.valkey )
+  end
+  
+  def validate_vaultconfig
+    # check the signature of the vaultconfig
+    
+  end
+  
+  def validate_data
+ 
+    # load the validation key
+    if self.validate_valkey
+      validation_key = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.keysets.valkey ) )
+    else
+      raise 'Access denied or vault is broken, unable to verify the validation key'
+    end
+    
+    # check the signature of the data
+    data_digest = OpenSSL::Digest.new( self.cryptoset.data_digest )
+    validation_key.verify( data_digest, Base64.strict_decode64( self.signatures.data_signature ), self.data.encrypted_data )
+    
+  end
+  
+  def write( options = { :filename => 'noname' } )
+    # write the vault to disk
+    
+  end
+  
+  def add_user( options = { :owner => false } )
+  
+  end
+  
+  def del_user
+  
+  end
+  
+  def make_owner
+  
+  end
+  
+  def make_reader
+   
+  end
+  
+  def open_vault
+   
   end
   
   
@@ -139,51 +223,14 @@ class MultiVault < Hashr_loader
     end
   end
   
-  def create( plain_data, options = { :data_cipher => 'aes-128-cbc', :signature_digest => 'sha256', :sign_key_cipher => 'aes-128-cbc' } )
-    # create will make the following parts of the vault:
-    # for create the assumption is that current_user will be the owner, and initialy the only user
-    # 1) config,json, a json with the settings, this is the @config (as an array, but will be json on disk), and json pp for signing
-    # 2) a symmetric key, encrypted with current_user_public_key (not stored, method of the private key)
-    # 3) data, encrypted with the SYMKEY
-    # 4) a "signkey", encrypted with a random symmetric key sign_key_symkey 
-    # 5) sign_key_symkey encrypted with current_user_public_key
-    # 6) the "validation key", which is the public key of the signkey
-    # 7) a signature on the validation key (owner-bound)
-    # 8) the "master" signature, a signature on everything exept the signature itself.
-    # n.b: a new user needs the validation key to create an add-me request, a user needs the validation key and checks his own signature on the validation key
-    # an owner has access to the private "signkey", but the owner would still like to validate (prevent tampering with signkey), so owner also needs a signature on 
-    # the validation key
-    
+    # todo: create files section to encrypt/decrypt external files
     # assuming io is the IO representing your uploaded file 
     # and out is the IO you are writing to
     # while chunk = io.read(1024)
     #   out << cipher.update(chunk)
     # end
     # out << cipher.final
-    
-    # do not use ecb mode, todo: check for ecb mode request
-    
-    # create the config array
-    @config[ :data_cipher ] = options[ :data_cipher ]
-    @config[ :sign_key_cipher ] = options[ :sign_key_cipher ]
-    @config[ :name ] = @name
-    @config[ :signature_digest ] = options[ :signature_digest ]
-    
-    # initialize the cipher and create symmetric key encrypted with the owners public key
-    data_cipher = OpenSSL::Cipher.new( @config[ :data_cipher ] )
-    data_cipher.encrypt
-    @symkey = @current_user_keyset.public_encrypt data_cipher.random_key # only owner/creator has the private key to read this 
-    
-    # create an encrypted version of the data, store the initialization vector
-    @config[ :data_initialization_vector ] = data_cipher.random_iv # init vector
-    @data_encrypted = data_cipher.update( plain_data ) + data_cipher.final
-    
-    # create the sign key and encrypt with symmetric key, the corresponding symmetric key is encypted with owner public key
-    
-    
-    
-  end
+   
   
-  private :current_user_keyset
 
 end
