@@ -15,7 +15,7 @@ require 'json'
 require 'hashr'
 require 'base64'
 
-# setting defaults
+# setting defaults (todo: other ciphers and digests are untested)
 DEFAULT_CRYPTOSET = {
   :signkey_cipher => 'aes-256-cbc',
   :data_cipher => 'aes-256-cbc',
@@ -54,7 +54,7 @@ class Hash
 end
 
 # this loads data into hashr, either from a file or from json data
-class Hashr_loader < Hashr
+class Vault_functions < Hashr
 
   def initialize( source = {} )
     super( JSON.parse( IO.read( source[ :file ] ) ) ) if not source[ :file ].nil?
@@ -66,7 +66,7 @@ end
 
 # todo make global constant keytool
 
-class MultiVault < Hashr_loader
+class MultiVault < Vault_functions
 
   # this loads multivault from a file, or creates a new one with a name
   # it loads the current user key or fails if no key is present
@@ -157,36 +157,59 @@ class MultiVault < Hashr_loader
   def validate_valkey
     # check the signature of the validation key (public key of signkey), using the public key of the current user
     # use the current user public key (derived from the private key) from disk, not from the vault itself!
+    # this wil also set @validation_key, so it is only available when it is validated
     valkey_digest = OpenSSL::Digest.new( self.cryptoset.valkey_digest )
-    @current_user_keyset.verify( valkey_digest, Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).valkey_signature ), self.keysets.valkey )
+    
+    if @current_user_keyset.verify( valkey_digest, Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).valkey_signature ), self.keysets.valkey )
+      @validation_key = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.keysets.valkey ) )
+      return true
+    else
+      raise "Unable to verify the validation key"
+    end
   end
   
-  def validate_vaultconfig
-    # check the signature of the vaultconfig
-    
+  def validate_vaultinfo
+    # never validate the vaultinfo without first validating the validation key
+    self.validate_valkey
+    # check the signature of the vaultinfo 
+    vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )
+    if @validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data  ).digestable )
+      return true
+    else
+      raise "Vault info validation failed"
+    end
   end
   
   def validate_data
- 
-    # load the validation key
-    if self.validate_valkey
-      validation_key = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.keysets.valkey ) )
-    else
-      raise 'Access denied or vault is broken, unable to verify the validation key'
-    end
+    # this will also validate the validation key and the vault info itself
+    # never read data without validating the vault info 
+    self.validate_vaultinfo
     
     # check the signature of the data
     data_digest = OpenSSL::Digest.new( self.cryptoset.data_digest )
-    validation_key.verify( data_digest, Base64.strict_decode64( self.signatures.data_signature ), self.data.encrypted_data )
+    if @validation_key.verify( data_digest, Base64.strict_decode64( self.signatures.data_signature ), self.data.encrypted_data )
+      return true
+    else
+      raise "Data validation failed"
+    end
     
   end
   
-  def write( options = { :filename => 'noname' } )
+  def read_data
+    self.validate_data
+    data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
+    data_cipher.decrypt
+    data_cipher.iv = Base64.strict_decode64( self.cryptoset.data_init_vector )
+    data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( users.send( @user_info.name.to_sym ).data_symkey ) )
+    data_cipher.update( Base64.strict_decode64( self.data.encrypted_data ) ) + data_cipher.final
+  end
+  
+  def write_to_disk( options = { :filename => "#{self.name}.vault" } )
     # write the vault to disk
     
   end
   
-  def add_user( options = { :owner => false } )
+  def add_user( options = { :make_owner => false } )
   
   end
   
