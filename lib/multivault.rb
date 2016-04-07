@@ -54,7 +54,7 @@ class Hash
 end
 
 # this loads data into hashr, either from a file or from json data
-class Vault_functions < Hashr
+class PreVault < Hashr
 
   def initialize( source = {} )
     super( JSON.parse( IO.read( source[ :file ] ) ) ) if not source[ :file ].nil?
@@ -62,11 +62,81 @@ class Vault_functions < Hashr
     super( source ) if source[ :file ].nil? and source[ :json ].nil?
   end
 
+  def validate_valkey
+    # check the signature of the validation key (public key of signkey), using the public key of the current user
+    # use the current user public key (derived from the private key) from disk, not from the vault itself!
+    # this is the only place to set @validation_key, so it is only available when it is validated
+    valkey_digest = OpenSSL::Digest.new( self.cryptoset.valkey_digest )
+    
+    if @current_user_keyset.verify( valkey_digest, Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).valkey_signature ), self.keysets.valkey )
+      @validation_key = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.keysets.valkey ) )
+      return true
+    else
+      raise "Unable to verify the validation key"
+    end
+  end
+  
+  def validate_vaultinfo
+    # never validate the vaultinfo without first validating the validation key
+    self.validate_valkey
+    # check the signature of the vaultinfo 
+    vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )
+    if @validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) )
+      return true
+    else
+      raise "Vault info validation failed"
+    end
+  end
+  
+  def validate_data
+    # this will also validate the validation key and the vault info itself
+    # never read data without validating the vault info 
+    self.validate_vaultinfo
+    
+    # check the signature of the data
+    data_digest = OpenSSL::Digest.new( self.cryptoset.data_digest )
+    if @validation_key.verify( data_digest, Base64.strict_decode64( self.signatures.data_signature ), self.data.encrypted_data )
+      return true
+    else
+      raise "Data validation failed"
+    end
+  end
+
+  def sign_data
+    # decrypt keysets.signkey, validate vaultinfo first
+    self.validate_vaultinfo
+    # cannot sign data if current user is not owner
+    raise "Must be owner to sign data" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    signkey_cipher = OpenSSL::Cipher.new( self.cryptoset.signkey_cipher )
+    signkey_cipher.decrypt
+    signkey_cipher.iv = Base64.strict_decode64( self.cryptoset.signkey_init_vector )
+    signkey_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).sign_symkey ) )
+    signkeypair = OpenSSL::PKey::RSA.new( signkey_cipher.update( Base64.strict_decode64( self.keysets.signkey ) ) + signkey_cipher.final )
+    
+    # sign data
+    data_digest = OpenSSL::Digest.new( self.cryptoset.data_digest )
+    self.signatures.data_signature = Base64.strict_encode64( signkeypair.sign( data_digest, self.data.encrypted_data ) ) 
+  end
+  
+  def sign_vaultinfo
+
+    raise "Must be owner to sign vaultinfo" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    signkey_cipher = OpenSSL::Cipher.new( self.cryptoset.signkey_cipher )
+    signkey_cipher.decrypt
+    signkey_cipher.iv = Base64.strict_decode64( self.cryptoset.signkey_init_vector )
+    signkey_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).sign_symkey ) )
+    signkeypair = OpenSSL::PKey::RSA.new( signkey_cipher.update( Base64.strict_decode64( self.keysets.signkey ) ) + signkey_cipher.final )
+    
+    vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )    
+    self.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) ) )
+    
+  end
+
 end
 
 # todo make global constant keytool
 
-class MultiVault < Vault_functions
+class MultiVault < PreVault
 
   # this loads multivault from a file, or creates a new one with a name
   # it loads the current user key or fails if no key is present
@@ -93,7 +163,7 @@ class MultiVault < Vault_functions
     super( :file => options[ :action ][ :load ]  ) if not options[ :action ][ :load ].nil?
     # or create new vault
     begin
-      newvault = Hashr.new
+      newvault = Hashr.new # PreVault.new( { :name => options[ :action ][ :create ] } )
       # set name
       newvault.name = options[ :action ][ :create ]
       # set cryptoset, merge default into cryptoset options
@@ -144,55 +214,14 @@ class MultiVault < Vault_functions
       newvault.users.send( @user_info.name.to_sym ).valkey_signature = Base64.strict_encode64( @current_user_keyset.sign( valkey_digest, newvault.keysets.valkey ) )
       
       # the signature on the vault itself should be consistent and repeatable, but hashes do not have any inherent order
-      # so the digest is based on: a concatenated( sorted list of key/value concatenated ), again based on the values actualy in the vault.
+      # so the digest is based on: a concatenated( sorted list of key + valuedigest concatenated ), again based on the values actualy in the vault.
       # all except the data and signatures themselves are used to create the signature
       # the signature is make with signkey
       vaultinfo_digest = OpenSSL::Digest.new( newvault.cryptoset.vaultinfo_digest )
-      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data  ).digestable ) )
+      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data  ).digestable( :digest => newvault.cryptoset.vaultinfo_digest ) ) )
       
       super( newvault )
     end if not options[ :action ][ :create ].nil?
-  end
-  
-  def validate_valkey
-    # check the signature of the validation key (public key of signkey), using the public key of the current user
-    # use the current user public key (derived from the private key) from disk, not from the vault itself!
-    # this wil also set @validation_key, so it is only available when it is validated
-    valkey_digest = OpenSSL::Digest.new( self.cryptoset.valkey_digest )
-    
-    if @current_user_keyset.verify( valkey_digest, Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).valkey_signature ), self.keysets.valkey )
-      @validation_key = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.keysets.valkey ) )
-      return true
-    else
-      raise "Unable to verify the validation key"
-    end
-  end
-  
-  def validate_vaultinfo
-    # never validate the vaultinfo without first validating the validation key
-    self.validate_valkey
-    # check the signature of the vaultinfo 
-    vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )
-    if @validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data  ).digestable )
-      return true
-    else
-      raise "Vault info validation failed"
-    end
-  end
-  
-  def validate_data
-    # this will also validate the validation key and the vault info itself
-    # never read data without validating the vault info 
-    self.validate_vaultinfo
-    
-    # check the signature of the data
-    data_digest = OpenSSL::Digest.new( self.cryptoset.data_digest )
-    if @validation_key.verify( data_digest, Base64.strict_decode64( self.signatures.data_signature ), self.data.encrypted_data )
-      return true
-    else
-      raise "Data validation failed"
-    end
-    
   end
   
   def read_data
@@ -200,8 +229,20 @@ class MultiVault < Vault_functions
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.decrypt
     data_cipher.iv = Base64.strict_decode64( self.cryptoset.data_init_vector )
-    data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( users.send( @user_info.name.to_sym ).data_symkey ) )
+    data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
     data_cipher.update( Base64.strict_decode64( self.data.encrypted_data ) ) + data_cipher.final
+  end
+  
+  def write_data( newdata_plain )
+    # set and sign
+    raise "Must be owner to write data" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
+    data_cipher.encrypt
+    data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
+    self.cryptoset.data_init_vector = Base64.strict_encode64( data_cipher.random_iv ) 
+    self.sign_vaultinfo # if we move data_init_vector to data we don't have to re-sign the vault itself for write_data
+    self.data.encrypted_data = Base64.strict_encode64( data_cipher.update( newdata_plain ) + data_cipher.final )
+    self.sign_data
   end
   
   def write_to_disk( options = { :filename => "#{self.name}.vault" } )
