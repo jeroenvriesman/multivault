@@ -57,6 +57,7 @@ end
 class PreVault < Hashr
 
   def initialize( source = {} )
+    @original_filename = source[ :file ]
     super( JSON.parse( IO.read( source[ :file ] ) ) ) if not source[ :file ].nil?
     super( JSON.parse( source[ :json ] ) ) if not source[ :json ].nil?
     super( source ) if source[ :file ].nil? and source[ :json ].nil?
@@ -131,10 +132,20 @@ class PreVault < Hashr
     self.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) ) )
     
   end
+  
+  def write_to_disk( options = { :filename => "#{self.name}.vault" } )
+    # write the vault to disk
+    options[ :filename ] = @original_filename if not @original_filename.nil?
+    File.open( options[ :filename ],"wb") do |f|
+      f.write(JSON.pretty_generate(self))
+    end
+  end
 
 end
 
-# todo make global constant keytool
+
+# todo init vectors belong by their respective data, not in cryptoset
+# todo add auto-increasing version number on every vault re-sign, with date and time
 
 class MultiVault < PreVault
 
@@ -245,13 +256,29 @@ class MultiVault < PreVault
     self.sign_data
   end
   
-  def write_to_disk( options = { :filename => "#{self.name}.vault" } )
-    # write the vault to disk
+  def add_user( request_file, options = { :make_owner => false } )
     
-  end
-  
-  def add_user( options = { :make_owner => false } )
-  
+    raise "Must be owner to add user" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    # load request from file
+    access_request = PreVault.new( :file => request_file )
+    
+    # validate vault itself first (will also validate valkey)
+    self.validate_vaultinfo
+    
+    # validate signature on valkey with user pubkey and valkey from vault
+    newuser_pubkey = OpenSSL::PKey::RSA.new( Base64.strict_decode64( access_request.user_pubkey ) )
+    valkey_digest = OpenSSL::Digest.new( self.cryptoset.valkey_digest )
+    raise "Unable to validate valkey signature for new user" if not newuser_pubkey.verify( valkey_digest , Base64.strict_decode64( access_request.valkey_signature ), self.keysets.valkey )
+    
+    # add user public key, 
+    self.users.send( access_request.user_name ) = { :user_pubkey => access_request.user_pubkey :valkey_signature => access_request.valkey_signature }
+    
+    # give the user a symmetric key for data decryption, encrypted with the newusers' public key
+    self.users.send( access_request.user_name ).data_symkey = Base64.strict_encode64( newuser_pubkey.public_encrypt( @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) ) ) )
+    
+    # re-sign vault info
+    self.sign_vaultinfo
+    
   end
   
   def del_user
@@ -266,27 +293,26 @@ class MultiVault < PreVault
    
   end
   
-  def open_vault
-   
+  def change_vault_name
+  
   end
   
-  
-  # will read or create the private key for the current user (no passwd)
-  def current_user_keyset
-    # use File.join for linux/windows compatibility
-    keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
-    # create if not exists
-    if File.exists? keyfile 
-      @current_user_keyset = OpenSSL::PKey::RSA.new File.read keyfile
-    else
-      @current_user_keyset = OpenSSL::PKey::RSA.new 4096
-      FileUtils.mkdir_p File.dirname keyfile
-      open keyfile, 'w' do |io| io.write @current_user_keyset.to_pem end
-      FileUtils.chmod "u=r,og-rwx", keyfile
-      FileUtils.chmod "u=rx,og-rwx", File.dirname( keyfile )
-    end
+  def current_user_name
+    # returns current user name (for MVaultHelper )
+    @user_info.name
   end
   
+  def current_user_pubkey
+    # returns current user pubkey in base64 (for MVaultHelper )
+    Base64.strict_encode64( @current_user_keyset.public_key.to_der )
+  end
+  
+  def current_user_key
+    # returns current user keypair (for MVaultHelper)
+    @current_user_keyset
+  end
+  
+
     # todo: create files section to encrypt/decrypt external files
     # assuming io is the IO representing your uploaded file 
     # and out is the IO you are writing to
@@ -298,3 +324,50 @@ class MultiVault < PreVault
   
 
 end
+
+class MVaultHelper < PreVault
+  
+  def create_key( username )
+    # create key and write it if it doesn't exist
+    keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
+    raise "Keyfile already exists, please use delete_key first" if File.exists?( keyfile )
+    new_keyset = OpenSSL::PKey::RSA.new( 4096 )
+    FileUtils.mkdir_p File.dirname keyfile
+    open( keyfile, 'w' ) { |io| io.write( new_keyset.to_pem ) }
+    # write user info
+    userfile = File.join( ENV['HOME'], '.multivault', 'user_info' )
+    open( userfile, 'w' ) { |io| io.write( JSON.pretty_generate( { :name => username } ) ) }
+    FileUtils.chmod( "u=r,og-rwx", keyfile )
+    FileUtils.chmod( "u=r,og-rwx", userfile )
+    FileUtils.chmod( "u=rx,og-rwx", File.dirname( keyfile ) )
+  end
+  
+  def delete_key
+    keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
+    userfile = File.join( ENV['HOME'], '.multivault', 'user_info' )
+    raise "Keyfile doesn't exists, cannot delete something which isn't there" if not File.exists?( keyfile )
+    FileUtils.chmod( "u=rwx", File.dirname( keyfile ) )
+    FileUtils.chmod( "u=rw", keyfile )
+    FileUtils.chmod( "u=rw", userfile )
+    File.delete( keyfile )
+    File.delete( userfile )
+    Dir.rmdir( File.dirname( keyfile ) )
+  end
+  
+  def request_access( vault_file, request_file )
+    # creates a json file with the users' public key and a personal signature on the validation key
+    # the owner who adds the user should trust or validate the origin and content of the access request
+    vault = MultiVault.new( :action => { :load => vault_file } )
+    access_request = PreVault.new( { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
+    
+    # use the private key of the current user (owner) to sign the validation key
+    valkey_digest = OpenSSL::Digest.new( vault.cryptoset.valkey_digest )
+    access_request.valkey_signature = Base64.strict_encode64( vault.current_user_key.sign( valkey_digest, vault.keysets.valkey ) )
+    
+    access_request.write_to_disk( :filename => request_file )
+    
+  end
+  
+end
+
+MVAULT = MVaultHelper.new
