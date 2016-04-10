@@ -53,6 +53,8 @@ class Hash
   
 end
 
+# todo: make gem of this thing
+
 # this loads data into hashr, either from a file or from json data
 class PreVault < Hashr
 
@@ -84,7 +86,7 @@ class PreVault < Hashr
     self.validate_valkey
     # check the signature of the vaultinfo 
     vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )
-    if @validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) )
+    if @validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data, :initvectors  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) )
       return true
     else
       raise "Vault info validation failed"
@@ -112,7 +114,7 @@ class PreVault < Hashr
     raise "Must be owner to sign data" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
     signkey_cipher = OpenSSL::Cipher.new( self.cryptoset.signkey_cipher )
     signkey_cipher.decrypt
-    signkey_cipher.iv = Base64.strict_decode64( self.cryptoset.signkey_init_vector )
+    signkey_cipher.iv = Base64.strict_decode64( self.initvectors.signkey_init_vector )
     signkey_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).sign_symkey ) )
     signkeypair = OpenSSL::PKey::RSA.new( signkey_cipher.update( Base64.strict_decode64( self.keysets.signkey ) ) + signkey_cipher.final )
     
@@ -126,12 +128,12 @@ class PreVault < Hashr
     raise "Must be owner to sign vaultinfo" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
     signkey_cipher = OpenSSL::Cipher.new( self.cryptoset.signkey_cipher )
     signkey_cipher.decrypt
-    signkey_cipher.iv = Base64.strict_decode64( self.cryptoset.signkey_init_vector )
+    signkey_cipher.iv = Base64.strict_decode64( self.initvectors.signkey_init_vector )
     signkey_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).sign_symkey ) )
     signkeypair = OpenSSL::PKey::RSA.new( signkey_cipher.update( Base64.strict_decode64( self.keysets.signkey ) ) + signkey_cipher.final )
     
     vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )    
-    self.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) ) )
+    self.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data, :initvectors  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) ) )
     
   end
   
@@ -193,7 +195,7 @@ class MultiVault < PreVault
       signkey_cipher = OpenSSL::Cipher.new( newvault.cryptoset.signkey_cipher )
       signkey_cipher.encrypt
       # store the initialization vector (plain base64)
-      newvault.cryptoset.signkey_init_vector = Base64.strict_encode64( signkey_cipher.random_iv )
+      newvault[ :initvectors ] = { :signkey_init_vector => Base64.strict_encode64( signkey_cipher.random_iv ) }
       # store the symmetric key, but encrypt it with the current user public key, so only the current user can read it
       newvault.users.send( @user_info.name.to_sym ).sign_symkey = Base64.strict_encode64( @current_user_keyset.public_encrypt( signkey_cipher.random_key ) )
       
@@ -211,7 +213,7 @@ class MultiVault < PreVault
       data_cipher = OpenSSL::Cipher.new( newvault.cryptoset.data_cipher )
       data_cipher.encrypt
       # store the initialization vector (plain base64)
-      newvault.cryptoset.data_init_vector = Base64.strict_encode64( data_cipher.random_iv )
+      newvault.initvectors.data_init_vector = Base64.strict_encode64( data_cipher.random_iv )
       # store the symmetric key, but encrypt it with the current user public key, so only the current user can read it
       newvault.users.send( @user_info.name.to_sym ).data_symkey = Base64.strict_encode64( @current_user_keyset.public_encrypt( data_cipher.random_key ) )
       
@@ -234,7 +236,7 @@ class MultiVault < PreVault
       # all except the data and signatures themselves are used to create the signature
       # the signature is make with signkey
       vaultinfo_digest = OpenSSL::Digest.new( newvault.cryptoset.vaultinfo_digest )
-      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data  ).digestable( :digest => newvault.cryptoset.vaultinfo_digest ) ) )
+      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data, :initvectors  ).digestable( :digest => newvault.cryptoset.vaultinfo_digest ) ) )
       
       super( newvault )
     end if not options[ :action ][ :create ].nil?
@@ -244,7 +246,7 @@ class MultiVault < PreVault
     self.validate_data
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.decrypt
-    data_cipher.iv = Base64.strict_decode64( self.cryptoset.data_init_vector )
+    data_cipher.iv = Base64.strict_decode64( self.initvectors.data_init_vector )
     data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
     data_cipher.update( Base64.strict_decode64( self.data.encrypted_data ) ) + data_cipher.final
   end
@@ -255,8 +257,8 @@ class MultiVault < PreVault
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.encrypt
     data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
-    self.cryptoset.data_init_vector = Base64.strict_encode64( data_cipher.random_iv ) 
-    self.sign_vaultinfo # if we move data_init_vector to data we don't have to re-sign the vault itself for write_data
+    self.initvectors.data_init_vector = Base64.strict_encode64( data_cipher.random_iv ) 
+    # self.sign_vaultinfo # if we move data_init_vector to data we don't have to re-sign the vault itself for write_data
     self.data.encrypted_data = Base64.strict_encode64( data_cipher.update( newdata_plain ) + data_cipher.final )
     self.sign_data
   end
@@ -285,6 +287,8 @@ class MultiVault < PreVault
     
     # re-sign vault info
     self.sign_vaultinfo
+    
+    # todo: do something with make_owner if true
     
   end
   
