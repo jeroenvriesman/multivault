@@ -127,7 +127,7 @@ class PreVault < Hashr
   def sign_data
     # decrypt keysets.signkey, validate vaultinfo first
     self.validate_vaultinfo
-    self.validate_data_valkey
+    self.validate_data_valkey # not strictly needed..
     # cannot sign data if current user is not owner
     raise "Must be owner to sign data" if self.users.send( @user_info.name.to_sym ).data_sign_symkey.nil?
     data_signkey_cipher = OpenSSL::Cipher.new( self.cryptoset.data_signkey_cipher )
@@ -157,6 +157,7 @@ class PreVault < Hashr
   
   def write_to_disk( options = { :filename => "#{self.name}.vault" } )
     # write the vault to disk
+    # todo: maybe validate before writing?
     options[ :filename ] = @original_filename if not @original_filename.nil?
     File.open( options[ :filename ],"wb") do |f|
       f.write(JSON.pretty_generate(self))
@@ -294,7 +295,7 @@ class MultiVault < PreVault
   
   def write_data( newdata_plain )
     # set and sign
-    raise "Must be owner to write data" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "Must have data write capabilities to change data" if self.users.send( @user_info.name.to_sym ).data_sign_symkey.nil?
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.encrypt
     data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
@@ -325,7 +326,7 @@ class MultiVault < PreVault
     raise "Unable to validate data_valkey signature for new user" if not newuser_pubkey.verify( data_valkey_digest , Base64.strict_decode64( access_request.data_valkey_signature ), self.keysets.data_valkey )    
     
     
-    # add user public key, 
+    # add user public key and validation signatures
     self.users[ access_request.user_name.to_sym ] = { :user_pubkey => access_request.user_pubkey, :vaultinfo_valkey_signature => access_request.vaultinfo_valkey_signature, :data_valkey_signature => access_request.data_valkey_signature }
     
     # give the user a symmetric key for data decryption, encrypted with the newusers' public key
@@ -342,7 +343,7 @@ class MultiVault < PreVault
     # deletes a user
     # todo: owner cannot delete self, sign function needs users' signkey_symkey
     
-    raise "Must be owner to delete user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "Must have vaultinfo write capabilities to delete user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
     raise "No such user" if self.users.send( username.to_sym ).nil?
     
     self.validate_vaultinfo
@@ -353,30 +354,55 @@ class MultiVault < PreVault
   
   end
   
-  def make_owner( newowner)
-    # promotes a user from reader to owner
-    raise "Must be owner to promote user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
-    raise "No such user" if self.users.send( newowner.to_sym ).nil?
-    raise "User is already owner" if not self.users.send( newowner.to_sym ).vaultinfo_sign_symkey.nil?
+  def add_data_write( username )
+    # this will add data write capability to a user by adding data_sign_symkey for the user
+    raise "Must have vaultinfo_write capabilities to change user info" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "Must have data write capabilities to give another user data write access" if self.users.send( @user_info.name.to_sym ).data_sign_symkey.nil?
+    raise "No such user" if self.users.send( username.to_sym ).nil?
+    raise "User already has data write capabilities" if not self.users.send( username.to_sym ).data_sign_symkey.nil?
     
     self.validate_vaultinfo
-    # make reader an owner by adding sign_symkey encypted with public key of the new owner
-    newowner_pubkey = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.users.send( newowner.to_sym ).user_pubkey ) )
-    self.users.send( newowner.to_sym ).vaultinfo_sign_symkey =  Base64.strict_encode64( newowner_pubkey.public_encrypt(  @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey ) ) ) )
+    # add data write capabilities by adding sign_symkey encypted with public key of the new data writer
+    newcap_pubkey = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.users.send( username.to_sym ).user_pubkey ) )
+    self.users.send( username.to_sym ).data_sign_symkey =  Base64.strict_encode64( newcap_pubkey.public_encrypt(  @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_sign_symkey ) ) ) )
+    
+    self.sign_vaultinfo
+  end
+  
+  def del_data_write( username ) 
+    # this will remove data write capability by removing data_sign_symkey for a user
+    raise "Must have vaultinfo_write capabilities to change user info" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "No such user" if self.users.send( username.to_sym ).nil?
+    raise "User doesn't have data write capabilities" if self.users.send( username.to_sym ).data_sign_symkey.nil?
+    
+    self.validate_vaultinfo
+    self.users.send( username.to_sym ).delete( :data_sign_symkey )
+    self.sign_vaultinfo
+  end
+  
+  def add_vaultinfo_write( username)
+    # this will add vaultinfo write capabilities to a user, allowing to create users
+    raise "Must have vaultinfo_write capabilities to change user info" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "No such user" if self.users.send( username.to_sym ).nil?
+    raise "User already has vaultinfo write capabilities" if not self.users.send( username.to_sym ).vaultinfo_sign_symkey.nil?
+    
+    self.validate_vaultinfo
+    # add vaultinfo write capabilities by adding sign_symkey encypted with public key of the new vault administrator
+    newcap_pubkey = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.users.send( username.to_sym ).user_pubkey ) )
+    self.users.send( username.to_sym ).vaultinfo_sign_symkey =  Base64.strict_encode64( newcap_pubkey.public_encrypt(  @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey ) ) ) )
     
     self.sign_vaultinfo
     
   end
   
-  def make_reader( newreader )
-    # demotes an owner to reader
-    # todo: owner cannot demote self
-    raise "Must be owner to demote user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
-    raise "No such user" if self.users.send( newreader.to_sym ).nil?
-    raise "User is already reader" if self.users.send( newreader.to_sym ).vaultinfo_sign_symkey.nil?
+  def del_vaultinfo_write( username )
+    # this will delete vaultinfo write capabilities
+    raise "Must have vaultinfo_write capabilities to change user info" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
+    raise "No such user" if self.users.send( username.to_sym ).nil?
+    raise "User doesn't have vaultinfo write capabilities" if self.users.send( username.to_sym ).vaultinfo_sign_symkey.nil?
     
     self.validate_vaultinfo
-    self.users.send( newreader.to_sym ).delete( :vaultinfo_sign_symkey )
+    self.users.send( username.to_sym ).delete( :vaultinfo_sign_symkey )
     self.sign_vaultinfo
     
   end
