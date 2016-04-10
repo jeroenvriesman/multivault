@@ -1,4 +1,4 @@
-# jeroen vriesman <jeroen.vriesman@root-it.biz>
+# author: jeroen vriesman <jeroen.vriesman@root-it.biz>
 
 # implementation of a multu-user access vault
 # access is based on "having the right private key", together with a username
@@ -27,7 +27,7 @@ DEFAULT_CRYPTOSET = {
 
 DEFAULT_DATA = 'EMPTY'
 
-# extend Hash with methods to produce repeatble and consistant digests
+# extend Hash with methods to produce repeatble and consistant digests, todo: move to PreVault
 class Hash
 
   # iterate over all keys and yield the key + a digest of the value and 
@@ -62,6 +62,8 @@ class PreVault < Hashr
     super( JSON.parse( source[ :json ] ) ) if not source[ :json ].nil?
     super( source ) if source[ :file ].nil? and source[ :json ].nil?
   end
+
+  # todo: make private
 
   def validate_valkey
     # check the signature of the validation key (public key of signkey), using the public key of the current user
@@ -144,8 +146,9 @@ class PreVault < Hashr
 end
 
 
-# todo init vectors belong by their respective data, not in cryptoset
+# todo init vectors belong by their respective data, not in cryptoset, make separate init vector root in hash
 # todo add auto-increasing version number on every vault re-sign, with date and time
+# todo: unit tests
 
 class MultiVault < PreVault
 
@@ -174,7 +177,7 @@ class MultiVault < PreVault
     super( :file => options[ :action ][ :load ]  ) if not options[ :action ][ :load ].nil?
     # or create new vault
     begin
-      newvault = Hashr.new # PreVault.new( { :name => options[ :action ][ :create ] } )
+      newvault = Hashr.new # PreVault.new doesn't work...?
       # set name
       newvault.name = options[ :action ][ :create ]
       # set cryptoset, merge default into cryptoset options
@@ -193,6 +196,8 @@ class MultiVault < PreVault
       newvault.cryptoset.signkey_init_vector = Base64.strict_encode64( signkey_cipher.random_iv )
       # store the symmetric key, but encrypt it with the current user public key, so only the current user can read it
       newvault.users.send( @user_info.name.to_sym ).sign_symkey = Base64.strict_encode64( @current_user_keyset.public_encrypt( signkey_cipher.random_key ) )
+      
+      # todo: a separate signkey for data and the vault itself would create the possibility of separate data and vault read/write rights
       
       # create signkey, public part is validation key, private part will be encypted with signkey_cipher
       signkeypair = OpenSSL::PKey::RSA.new( 4096 )
@@ -258,6 +263,8 @@ class MultiVault < PreVault
   
   def add_user( request_file, options = { :make_owner => false } )
     
+    # todo: check if vault name matches request
+    
     raise "Must be owner to add user" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
     # load request from file
     access_request = PreVault.new( :file => request_file )
@@ -271,7 +278,7 @@ class MultiVault < PreVault
     raise "Unable to validate valkey signature for new user" if not newuser_pubkey.verify( valkey_digest , Base64.strict_decode64( access_request.valkey_signature ), self.keysets.valkey )
     
     # add user public key, 
-    self.users.send( access_request.user_name ) = { :user_pubkey => access_request.user_pubkey :valkey_signature => access_request.valkey_signature }
+    self.users[ access_request.user_name.to_sym ] = { :user_pubkey => access_request.user_pubkey, :valkey_signature => access_request.valkey_signature }
     
     # give the user a symmetric key for data decryption, encrypted with the newusers' public key
     self.users.send( access_request.user_name ).data_symkey = Base64.strict_encode64( newuser_pubkey.public_encrypt( @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) ) ) )
@@ -281,20 +288,63 @@ class MultiVault < PreVault
     
   end
   
-  def del_user
+  def del_user( username )
+    # deletes a user
+    # todo: owner cannot delete self, sign function needs users' signkey_symkey
+    
+    raise "Must be owner to delete user" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    raise "No such user" if self.users.send( username.to_sym ).nil?
+    
+    self.validate_vaultinfo
+    
+    self.users.delete( username.to_sym )
+    
+    self.sign_vaultinfo
   
   end
   
-  def make_owner
-  
+  def make_owner( newowner)
+    # promotes a user from reader to owner
+    raise "Must be owner to promote user" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    raise "No such user" if self.users.send( newowner.to_sym ).nil?
+    raise "User is already owner" if not self.users.send( newowner.to_sym ).sign_symkey.nil?
+    
+    self.validate_vaultinfo
+    # make reader an owner by adding sign_symkey encypted with public key of the new owner
+    newowner_pubkey = OpenSSL::PKey::RSA.new( Base64.strict_decode64( self.users.send( newowner.to_sym ).user_pubkey ) )
+    self.users.send( newowner.to_sym ).sign_symkey =  Base64.strict_encode64( newowner_pubkey.public_encrypt(  @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).sign_symkey ) ) ) )
+    
+    self.sign_vaultinfo
+    
   end
   
-  def make_reader
-   
+  def make_reader( newreader )
+    # demotes an owner to reader
+    # todo: owner cannot demote self
+    raise "Must be owner to demote user" if self.users.send( @user_info.name.to_sym ).sign_symkey.nil?
+    raise "No such user" if self.users.send( newreader.to_sym ).nil?
+    raise "User is already reader" if self.users.send( newreader.to_sym ).sign_symkey.nil?
+    
+    self.validate_vaultinfo
+    self.users.send( newreader.to_sym ).delete( :sign_symkey )
+    self.sign_vaultinfo
+    
   end
   
   def change_vault_name
+    # notimplemented yet
+  end
   
+  def re_cipher
+    # re-crypting (with another cipher) not implemented yet
+  end
+  
+  def re_digest
+    # ruminate not implemented yet
+  end
+  
+  def whoami
+    # not implemented yet
   end
   
   def current_user_name
@@ -314,8 +364,6 @@ class MultiVault < PreVault
   
 
     # todo: create files section to encrypt/decrypt external files
-    # assuming io is the IO representing your uploaded file 
-    # and out is the IO you are writing to
     # while chunk = io.read(1024)
     #   out << cipher.update(chunk)
     # end
@@ -328,6 +376,7 @@ end
 class MVaultHelper < PreVault
   
   def create_key( username )
+    # todo: ask user for password on private key
     # create key and write it if it doesn't exist
     keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
     raise "Keyfile already exists, please use delete_key first" if File.exists?( keyfile )
@@ -356,6 +405,8 @@ class MVaultHelper < PreVault
   
   def request_access( vault_file, request_file )
     # creates a json file with the users' public key and a personal signature on the validation key
+    # todo: create two signatures when validation key becomes separate data and vault validation key
+    # todo: sign the request (is that usefull without external pubkey source?)
     # the owner who adds the user should trust or validate the origin and content of the access request
     vault = MultiVault.new( :action => { :load => vault_file } )
     access_request = PreVault.new( { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
