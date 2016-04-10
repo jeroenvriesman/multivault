@@ -296,6 +296,7 @@ class MultiVault < PreVault
   def write_data( newdata_plain )
     # set and sign
     raise "Must have data write capabilities to change data" if self.users.send( @user_info.name.to_sym ).data_sign_symkey.nil?
+    raise "Vault should not be empty" if newdata_plain.empty?
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.encrypt
     data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )
