@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name        = 'multivault'
-  s.version     = '0.1.0'
+  s.version     = '0.1.1'
   s.date        = '2016-04-10'
   s.summary     = "Multi user vault"
   s.description = "Vault usable for teams and build processes"
