@@ -14,6 +14,7 @@ require 'openssl'
 require 'json'
 require 'hashr'
 require 'base64'
+require 'fileutils' # required by older ruby versions, auto-loaded by rubyv > 2 
 
 # setting defaults (todo: other ciphers and digests are untested)
 DEFAULT_CRYPTOSET = {
