@@ -72,7 +72,7 @@ class PreVault < Hashr
   # todo: make private
 
   def validate_vaultinfo_valkey
-    # check the signature of the validation key (public key of signkey), using the public key of the current user
+    # check the signature of the vaultinfo validation key (public key of vaultinfo signkey), using the public key of the current user
     # use the current user public key (derived from the private key) from disk, not from the vault itself!
     # this is the only place to set @validation_key, so it is only available when it is validated
     vaultinfo_valkey_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_valkey_digest )
@@ -297,7 +297,7 @@ class MultiVault < PreVault
   def write_data( newdata_plain )
     # set and sign
     raise "Must have data write capabilities to change data" if self.users.send( @user_info.name.to_sym ).data_sign_symkey.nil?
-    raise "Vault should not be empty" if newdata_plain.empty?
+    raise "Vault should not be empty" if newdata_plain.empty? # todo: allow empty data
     data_cipher = OpenSSL::Cipher.new( self.cryptoset.data_cipher )
     data_cipher.encrypt
     data_cipher.key = @current_user_keyset.private_decrypt( Base64.strict_decode64( self.users.send( @user_info.name.to_sym ).data_symkey ) )

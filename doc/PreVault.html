@@ -1,0 +1,741 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>
+  Class: PreVault
+  
+    &mdash; Documentation by YARD 0.8.7.6
+  
+</title>
+
+  <link rel="stylesheet" href="css/style.css" type="text/css" charset="utf-8" />
+
+  <link rel="stylesheet" href="css/common.css" type="text/css" charset="utf-8" />
+
+<script type="text/javascript" charset="utf-8">
+  hasFrames = window.top.frames.main ? true : false;
+  relpath = '';
+  framesUrl = "frames.html#!PreVault.html";
+</script>
+
+
+  <script type="text/javascript" charset="utf-8" src="js/jquery.js"></script>
+
+  <script type="text/javascript" charset="utf-8" src="js/app.js"></script>
+
+
+  </head>
+  <body>
+    <div id="header">
+      <div id="menu">
+  
+    <a href="_index.html">Index (P)</a> &raquo;
+    
+    
+    <span class="title">PreVault</span>
+  
+
+  <div class="noframes"><span class="title">(</span><a href="." target="_top">no frames</a><span class="title">)</span></div>
+</div>
+
+      <div id="search">
+  
+    <a class="full_list_link" id="class_list_link"
+        href="class_list.html">
+      Class List
+    </a>
+  
+    <a class="full_list_link" id="method_list_link"
+        href="method_list.html">
+      Method List
+    </a>
+  
+    <a class="full_list_link" id="file_list_link"
+        href="file_list.html">
+      File List
+    </a>
+  
+</div>
+      <div class="clear"></div>
+    </div>
+
+    <iframe id="search_frame"></iframe>
+
+    <div id="content"><h1>Class: PreVault
+  
+  
+  
+</h1>
+
+<dl class="box">
+  
+    <dt class="r1">Inherits:</dt>
+    <dd class="r1">
+      <span class="inheritName">Hashr</span>
+      
+        <ul class="fullTree">
+          <li>Object</li>
+          
+            <li class="next">Hashr</li>
+          
+            <li class="next">PreVault</li>
+          
+        </ul>
+        <a href="#" class="inheritanceTree">show all</a>
+      
+      </dd>
+    
+  
+  
+    
+  
+    
+  
+  
+  
+    <dt class="r2 last">Defined in:</dt>
+    <dd class="r2 last">lib/multivault.rb</dd>
+  
+</dl>
+<div class="clear"></div>
+
+<h2>Overview</h2><div class="docstring">
+  <div class="discussion">
+    
+<p>this loads data into hashr, either from a file or from json data</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><div id="subclasses">
+  <h2>Direct Known Subclasses</h2>
+  <p class="children"><span class='object_link'><a href="MVaultHelper.html" title="MVaultHelper (class)">MVaultHelper</a></span>, <span class='object_link'><a href="MultiVault.html" title="MultiVault (class)">MultiVault</a></span></p>
+</div>
+
+
+
+
+
+
+
+  
+    <h2>
+      Instance Method Summary
+      <small>(<a href="#" class="summary_toggle">collapse</a>)</small>
+    </h2>
+
+    <ul class="summary">
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#initialize-instance_method" title="#initialize (instance method)">- (PreVault) <strong>initialize</strong>(source = {}) </a>
+    
+
+    
+  </span>
+  
+  
+    <span class="note title constructor">constructor</span>
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>A new instance of PreVault.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#sign_data-instance_method" title="#sign_data (instance method)">- (Object) <strong>sign_data</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#sign_vaultinfo-instance_method" title="#sign_vaultinfo (instance method)">- (Object) <strong>sign_vaultinfo</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#validate_data-instance_method" title="#validate_data (instance method)">- (Object) <strong>validate_data</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#validate_data_valkey-instance_method" title="#validate_data_valkey (instance method)">- (Object) <strong>validate_data_valkey</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#validate_vaultinfo-instance_method" title="#validate_vaultinfo (instance method)">- (Object) <strong>validate_vaultinfo</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#validate_vaultinfo_valkey-instance_method" title="#validate_vaultinfo_valkey (instance method)">- (Object) <strong>validate_vaultinfo_valkey</strong> </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'>
+<p>todo: make private.</p>
+</div></span>
+  
+</li>
+
+      
+        <li class="public ">
+  <span class="summary_signature">
+    
+      <a href="#write_to_disk-instance_method" title="#write_to_disk (instance method)">- (Object) <strong>write_to_disk</strong>(options = { :filename =&gt; &quot;#{self.name}.vault&quot; }) </a>
+    
+
+    
+  </span>
+  
+  
+  
+  
+  
+  
+  
+
+  
+    <span class="summary_desc"><div class='inline'></div></span>
+  
+</li>
+
+      
+    </ul>
+  
+
+
+  <div id="constructor_details" class="method_details_list">
+  <h2>Constructor Details</h2>
+  
+    <div class="method_details first">
+  <h3 class="signature first" id="initialize-instance_method">
+  
+    - (<tt><span class='object_link'><a href="" title="PreVault (class)">PreVault</a></span></tt>) <strong>initialize</strong>(source = {}) 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>Returns a new instance of PreVault</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+65
+66
+67
+68
+69
+70</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 65</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_initialize'>initialize</span><span class='lparen'>(</span> <span class='id identifier rubyid_source'>source</span> <span class='op'>=</span> <span class='lbrace'>{</span><span class='rbrace'>}</span> <span class='rparen'>)</span>
+  <span class='ivar'>@original_filename</span> <span class='op'>=</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:file</span> <span class='rbracket'>]</span>
+  <span class='kw'>super</span><span class='lparen'>(</span> <span class='const'>JSON</span><span class='period'>.</span><span class='id identifier rubyid_parse'>parse</span><span class='lparen'>(</span> <span class='const'>IO</span><span class='period'>.</span><span class='id identifier rubyid_read'>read</span><span class='lparen'>(</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:file</span> <span class='rbracket'>]</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='kw'>if</span> <span class='kw'>not</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:file</span> <span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+  <span class='kw'>super</span><span class='lparen'>(</span> <span class='const'>JSON</span><span class='period'>.</span><span class='id identifier rubyid_parse'>parse</span><span class='lparen'>(</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:json</span> <span class='rbracket'>]</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='kw'>if</span> <span class='kw'>not</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:json</span> <span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+  <span class='kw'>super</span><span class='lparen'>(</span> <span class='id identifier rubyid_source'>source</span> <span class='rparen'>)</span> <span class='kw'>if</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:file</span> <span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span> <span class='kw'>and</span> <span class='id identifier rubyid_source'>source</span><span class='lbracket'>[</span> <span class='symbol'>:json</span> <span class='rbracket'>]</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+  
+</div>
+
+
+  <div id="instance_method_details" class="method_details_list">
+    <h2>Instance Method Details</h2>
+
+    
+      <div class="method_details first">
+  <h3 class="signature first" id="sign_data-instance_method">
+  
+    - (<tt>Object</tt>) <strong>sign_data</strong> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+128
+129
+130
+131
+132
+133
+134
+135
+136
+137
+138
+139
+140
+141
+142
+143</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 128</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_sign_data'>sign_data</span>
+  <span class='comment'># decrypt keysets.signkey, validate vaultinfo first
+</span>  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_validate_vaultinfo'>validate_vaultinfo</span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_validate_data_valkey'>validate_data_valkey</span> <span class='comment'># not strictly needed..
+</span>  <span class='comment'># cannot sign data if current user is not owner
+</span>  <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Must be owner to sign data</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>if</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_data_sign_symkey'>data_sign_symkey</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+  <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Cipher</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_decrypt'>decrypt</span>
+  <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_iv'>iv</span> <span class='op'>=</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_initvectors'>initvectors</span><span class='period'>.</span><span class='id identifier rubyid_data_signkey_init_vector'>data_signkey_init_vector</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_key'>key</span> <span class='op'>=</span> <span class='ivar'>@current_user_keyset</span><span class='period'>.</span><span class='id identifier rubyid_private_decrypt'>private_decrypt</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_data_sign_symkey'>data_sign_symkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_data_signkeypair'>data_signkeypair</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>PKey</span><span class='op'>::</span><span class='const'>RSA</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_update'>update</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_data_signkey'>data_signkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='op'>+</span> <span class='id identifier rubyid_data_signkey_cipher'>data_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_final'>final</span> <span class='rparen'>)</span>
+  
+  <span class='comment'># sign data
+</span>  <span class='id identifier rubyid_data_digest'>data_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_data_digest'>data_digest</span> <span class='rparen'>)</span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_signatures'>signatures</span><span class='period'>.</span><span class='id identifier rubyid_data_signature'>data_signature</span> <span class='op'>=</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_encode64'>strict_encode64</span><span class='lparen'>(</span> <span class='id identifier rubyid_data_signkeypair'>data_signkeypair</span><span class='period'>.</span><span class='id identifier rubyid_sign'>sign</span><span class='lparen'>(</span> <span class='id identifier rubyid_data_digest'>data_digest</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_data'>data</span><span class='period'>.</span><span class='id identifier rubyid_encrypted_data'>encrypted_data</span> <span class='rparen'>)</span> <span class='rparen'>)</span> 
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="sign_vaultinfo-instance_method">
+  
+    - (<tt>Object</tt>) <strong>sign_vaultinfo</strong> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+145
+146
+147
+148
+149
+150
+151
+152
+153
+154
+155
+156
+157</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 145</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_sign_vaultinfo'>sign_vaultinfo</span>
+
+  <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Must be owner to sign vaultinfo</span><span class='tstring_end'>&quot;</span></span> <span class='kw'>if</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_sign_symkey'>vaultinfo_sign_symkey</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+  <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Cipher</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_decrypt'>decrypt</span>
+  <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_iv'>iv</span> <span class='op'>=</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_initvectors'>initvectors</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_signkey_init_vector'>vaultinfo_signkey_init_vector</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_key'>key</span> <span class='op'>=</span> <span class='ivar'>@current_user_keyset</span><span class='period'>.</span><span class='id identifier rubyid_private_decrypt'>private_decrypt</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_sign_symkey'>vaultinfo_sign_symkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+  <span class='id identifier rubyid_vaultinfo_signkeypair'>vaultinfo_signkeypair</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>PKey</span><span class='op'>::</span><span class='const'>RSA</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_update'>update</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_signkey'>vaultinfo_signkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='op'>+</span> <span class='id identifier rubyid_vaultinfo_signkey_cipher'>vaultinfo_signkey_cipher</span><span class='period'>.</span><span class='id identifier rubyid_final'>final</span> <span class='rparen'>)</span>
+  
+  <span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='rparen'>)</span>    
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_signatures'>signatures</span><span class='period'>.</span><span class='id identifier rubyid_vaultconfig_signature'>vaultconfig_signature</span> <span class='op'>=</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_encode64'>strict_encode64</span><span class='lparen'>(</span> <span class='id identifier rubyid_vaultinfo_signkeypair'>vaultinfo_signkeypair</span><span class='period'>.</span><span class='id identifier rubyid_sign'>sign</span><span class='lparen'>(</span> <span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_except'>except</span><span class='lparen'>(</span> <span class='symbol'>:signatures</span><span class='comma'>,</span> <span class='symbol'>:data</span><span class='comma'>,</span> <span class='symbol'>:initvectors</span>  <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_digestable'>digestable</span><span class='lparen'>(</span> <span class='symbol'>:digest</span> <span class='op'>=&gt;</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='rparen'>)</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+  
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="validate_data-instance_method">
+  
+    - (<tt>Object</tt>) <strong>validate_data</strong> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+114
+115
+116
+117
+118
+119
+120
+121
+122
+123
+124
+125
+126</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 114</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_validate_data'>validate_data</span>
+  <span class='comment'># this will also validate the validation key and the vault info itself
+</span>  <span class='comment'># never read data without validating the vault info 
+</span>  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_validate_vaultinfo'>validate_vaultinfo</span>
+  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_validate_data_valkey'>validate_data_valkey</span>
+  <span class='comment'># check the signature of the data
+</span>  <span class='id identifier rubyid_data_digest'>data_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_data_digest'>data_digest</span> <span class='rparen'>)</span>
+  <span class='kw'>if</span> <span class='ivar'>@data_validation_key</span><span class='period'>.</span><span class='id identifier rubyid_verify'>verify</span><span class='lparen'>(</span> <span class='id identifier rubyid_data_digest'>data_digest</span><span class='comma'>,</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_signatures'>signatures</span><span class='period'>.</span><span class='id identifier rubyid_data_signature'>data_signature</span> <span class='rparen'>)</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_data'>data</span><span class='period'>.</span><span class='id identifier rubyid_encrypted_data'>encrypted_data</span> <span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='kw'>true</span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Data validation failed</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="validate_data_valkey-instance_method">
+  
+    - (<tt>Object</tt>) <strong>validate_data_valkey</strong> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+100</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 88</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_validate_data_valkey'>validate_data_valkey</span>
+  <span class='comment'># check the signature of the validation key (public key of signkey), using the public key of the current user
+</span>  <span class='comment'># use the current user public key (derived from the private key) from disk, not from the vault itself!
+</span>  <span class='comment'># this is the only place to set @data_validation_key, so it is only available when it is validated
+</span>  <span class='id identifier rubyid_data_valkey_digest'>data_valkey_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_data_valkey_digest'>data_valkey_digest</span> <span class='rparen'>)</span>
+  
+  <span class='kw'>if</span> <span class='ivar'>@current_user_keyset</span><span class='period'>.</span><span class='id identifier rubyid_verify'>verify</span><span class='lparen'>(</span> <span class='id identifier rubyid_data_valkey_digest'>data_valkey_digest</span><span class='comma'>,</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_data_valkey_signature'>data_valkey_signature</span> <span class='rparen'>)</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_data_valkey'>data_valkey</span> <span class='rparen'>)</span>
+    <span class='ivar'>@data_validation_key</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>PKey</span><span class='op'>::</span><span class='const'>RSA</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_data_valkey'>data_valkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='kw'>true</span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Unable to verify the data validation key</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="validate_vaultinfo-instance_method">
+  
+    - (<tt>Object</tt>) <strong>validate_vaultinfo</strong> 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+102
+103
+104
+105
+106
+107
+108
+109
+110
+111
+112</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 102</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_validate_vaultinfo'>validate_vaultinfo</span>
+  <span class='comment'># never validate the vaultinfo without first validating the validation key
+</span>  <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_validate_vaultinfo_valkey'>validate_vaultinfo_valkey</span>
+  <span class='comment'># check the signature of the vaultinfo 
+</span>  <span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='rparen'>)</span>
+  <span class='kw'>if</span> <span class='ivar'>@vaultinfo_validation_key</span><span class='period'>.</span><span class='id identifier rubyid_verify'>verify</span><span class='lparen'>(</span> <span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span><span class='comma'>,</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_signatures'>signatures</span><span class='period'>.</span><span class='id identifier rubyid_vaultconfig_signature'>vaultconfig_signature</span> <span class='rparen'>)</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_except'>except</span><span class='lparen'>(</span> <span class='symbol'>:signatures</span><span class='comma'>,</span> <span class='symbol'>:data</span><span class='comma'>,</span> <span class='symbol'>:initvectors</span>  <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_digestable'>digestable</span><span class='lparen'>(</span> <span class='symbol'>:digest</span> <span class='op'>=&gt;</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_digest'>vaultinfo_digest</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='kw'>true</span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Vault info validation failed</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="validate_vaultinfo_valkey-instance_method">
+  
+    - (<tt>Object</tt>) <strong>validate_vaultinfo_valkey</strong> 
+  
+
+  
+
+  
+</h3><div class="docstring">
+  <div class="discussion">
+    
+<p>todo: make private</p>
+
+
+  </div>
+</div>
+<div class="tags">
+  
+
+</div><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 74</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_validate_vaultinfo_valkey'>validate_vaultinfo_valkey</span>
+  <span class='comment'># check the signature of the vaultinfo validation key (public key of vaultinfo signkey), using the public key of the current user
+</span>  <span class='comment'># use the current user public key (derived from the private key) from disk, not from the vault itself!
+</span>  <span class='comment'># this is the only place to set @validation_key, so it is only available when it is validated
+</span>  <span class='id identifier rubyid_vaultinfo_valkey_digest'>vaultinfo_valkey_digest</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>Digest</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_cryptoset'>cryptoset</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_valkey_digest'>vaultinfo_valkey_digest</span> <span class='rparen'>)</span>
+  
+  <span class='kw'>if</span> <span class='ivar'>@current_user_keyset</span><span class='period'>.</span><span class='id identifier rubyid_verify'>verify</span><span class='lparen'>(</span> <span class='id identifier rubyid_vaultinfo_valkey_digest'>vaultinfo_valkey_digest</span><span class='comma'>,</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_users'>users</span><span class='period'>.</span><span class='id identifier rubyid_send'>send</span><span class='lparen'>(</span> <span class='ivar'>@user_info</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='period'>.</span><span class='id identifier rubyid_to_sym'>to_sym</span> <span class='rparen'>)</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_valkey_signature'>vaultinfo_valkey_signature</span> <span class='rparen'>)</span><span class='comma'>,</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_valkey'>vaultinfo_valkey</span> <span class='rparen'>)</span>
+    <span class='ivar'>@vaultinfo_validation_key</span> <span class='op'>=</span> <span class='const'>OpenSSL</span><span class='op'>::</span><span class='const'>PKey</span><span class='op'>::</span><span class='const'>RSA</span><span class='period'>.</span><span class='id identifier rubyid_new'>new</span><span class='lparen'>(</span> <span class='const'>Base64</span><span class='period'>.</span><span class='id identifier rubyid_strict_decode64'>strict_decode64</span><span class='lparen'>(</span> <span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_keysets'>keysets</span><span class='period'>.</span><span class='id identifier rubyid_vaultinfo_valkey'>vaultinfo_valkey</span> <span class='rparen'>)</span> <span class='rparen'>)</span>
+    <span class='kw'>return</span> <span class='kw'>true</span>
+  <span class='kw'>else</span>
+    <span class='id identifier rubyid_raise'>raise</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>Unable to verify the vaultinfo validation key</span><span class='tstring_end'>&quot;</span></span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+      <div class="method_details ">
+  <h3 class="signature " id="write_to_disk-instance_method">
+  
+    - (<tt>Object</tt>) <strong>write_to_disk</strong>(options = { :filename =&gt; &quot;#{self.name}.vault&quot; }) 
+  
+
+  
+
+  
+</h3><table class="source_code">
+  <tr>
+    <td>
+      <pre class="lines">
+
+
+159
+160
+161
+162
+163
+164
+165
+166</pre>
+    </td>
+    <td>
+      <pre class="code"><span class="info file"># File 'lib/multivault.rb', line 159</span>
+
+<span class='kw'>def</span> <span class='id identifier rubyid_write_to_disk'>write_to_disk</span><span class='lparen'>(</span> <span class='id identifier rubyid_options'>options</span> <span class='op'>=</span> <span class='lbrace'>{</span> <span class='symbol'>:filename</span> <span class='op'>=&gt;</span> <span class='tstring'><span class='tstring_beg'>&quot;</span><span class='embexpr_beg'>#{</span><span class='kw'>self</span><span class='period'>.</span><span class='id identifier rubyid_name'>name</span><span class='embexpr_end'>}</span><span class='tstring_content'>.vault</span><span class='tstring_end'>&quot;</span></span> <span class='rbrace'>}</span> <span class='rparen'>)</span>
+  <span class='comment'># write the vault to disk
+</span>  <span class='comment'># todo: maybe validate before writing?
+</span>  <span class='id identifier rubyid_options'>options</span><span class='lbracket'>[</span> <span class='symbol'>:filename</span> <span class='rbracket'>]</span> <span class='op'>=</span> <span class='ivar'>@original_filename</span> <span class='kw'>if</span> <span class='kw'>not</span> <span class='ivar'>@original_filename</span><span class='period'>.</span><span class='id identifier rubyid_nil?'>nil?</span>
+  <span class='const'>File</span><span class='period'>.</span><span class='id identifier rubyid_open'>open</span><span class='lparen'>(</span> <span class='id identifier rubyid_options'>options</span><span class='lbracket'>[</span> <span class='symbol'>:filename</span> <span class='rbracket'>]</span><span class='comma'>,</span><span class='tstring'><span class='tstring_beg'>&quot;</span><span class='tstring_content'>wb</span><span class='tstring_end'>&quot;</span></span><span class='rparen'>)</span> <span class='kw'>do</span> <span class='op'>|</span><span class='id identifier rubyid_f'>f</span><span class='op'>|</span>
+    <span class='id identifier rubyid_f'>f</span><span class='period'>.</span><span class='id identifier rubyid_write'>write</span><span class='lparen'>(</span><span class='const'>JSON</span><span class='period'>.</span><span class='id identifier rubyid_pretty_generate'>pretty_generate</span><span class='lparen'>(</span><span class='kw'>self</span><span class='rparen'>)</span><span class='rparen'>)</span>
+  <span class='kw'>end</span>
+<span class='kw'>end</span></pre>
+    </td>
+  </tr>
+</table>
+</div>
+    
+  </div>
+
+</div>
+
+    <div id="footer">
+  Generated on Mon May 23 12:45:28 2016 by
+  <a href="http://yardoc.org" title="Yay! A Ruby Documentation Tool" target="_parent">yard</a>
+  0.8.7.6 (ruby-2.0.0).
+</div>
+
+  </body>
+</html>
