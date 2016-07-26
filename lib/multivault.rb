@@ -2,9 +2,8 @@
 
 # implementation of a multu-user access vault
 # access is based on "having the right private key", together with a username
-# two types of users: reader and owners
-# readers can read the vault
-# owners can write the vault (that includes adding, deleting, promoting and demoting users)
+# vault users can read the vault info and the data in the vault
+# by giving users access to the keys needed for signing they can write the vault-info (add/del users...) or write the data
 # new users need to make a request to an owner to gain access to the vault (the request is a signature of the validation key + public key)
 
 # private keys have length 4096
@@ -55,9 +54,27 @@ class Hash
     kdgs.sort.join
   end
   
+  def keyprefix_values( options = { :prefix => '', :separator => '.' } )
+	# yields all values of an hash prefixed by the keys, used to create a digestable from an hash
+	# the goal is to create a string which is unique and reproducable so the digest is always the same if the hash is the same
+	# an hash doesn't have an defined order, so the output should be sorted en joined to create a digestable string
+	# if one or more of the vaules contains the seprator, this operation is not reversable, which is not a problem for a digest
+	
+	# return sorted array of yielded values if no block is given (values are not sorted when yields are used in block!)
+	return to_enum( :keyprefix_values, options ).sort unless block_given?
+	
+	each_key do |key|
+	  if self[ key ].respond_to? ( :each )
+	    # call self with sub hash if it is enumerable
+		self[ key ].keyprefix_values( :prefix => [ options[ :prefix ], key.to_s ].reject(&:empty?).join( options[ :separator ] ), :separator => options[ :separator ] ) { |out| yield out }
+	  else
+	    # in all other cases we have a leaf
+		yield [ options[ :prefix ], key.to_s, self[ key ] ].reject(&:empty?).join( options[ :separator ] ) 
+	  end
+	end
+  end
+  
 end
-
-# todo: make gem of this thing
 
 # this loads data into hashr, either from a file or from json data
 class PreVault < Hashr
