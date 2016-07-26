@@ -54,22 +54,23 @@ class Hash
     kdgs.sort.join
   end
   
-  def keyprefix_values( options = { :prefix => '', :separator => '.' } )
+  def keyprefix_values( prefix: nil, separator: '.' )
 	# yields all values of an hash prefixed by the keys, used to create a digestable from an hash
+	# when no block is given, it will return a sorted array of the yields
 	# the goal is to create a string which is unique and reproducable so the digest is always the same if the hash is the same
 	# an hash doesn't have an defined order, so the output should be sorted en joined to create a digestable string
 	# if one or more of the vaules contains the seprator, this operation is not reversable, which is not a problem for a digest
 	
 	# return sorted array of yielded values if no block is given (values are not sorted when yields are used in block!)
-	return to_enum( :keyprefix_values, options ).sort unless block_given?
+	return to_enum( :keyprefix_values, { :prefix => prefix, :separator => separator } ).sort unless block_given?
 	
 	each_key do |key|
 	  if self[ key ].respond_to? ( :each )
 	    # call self with sub hash if it is enumerable
-		self[ key ].keyprefix_values( :prefix => [ options[ :prefix ], key.to_s ].reject(&:empty?).join( options[ :separator ] ), :separator => options[ :separator ] ) { |out| yield out }
+		self[ key ].keyprefix_values( prefix: [ prefix, key.to_s ].compact.join( separator ), separator: separator ) { |out| yield out }
 	  else
 	    # in all other cases we have a leaf
-		yield [ options[ :prefix ], key.to_s, self[ key ] ].reject(&:empty?).join( options[ :separator ] ) 
+		yield [ prefix, key.to_s, self[ key ] ].compact.join( separator ) 
 	  end
 	end
   end
