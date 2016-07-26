@@ -13,7 +13,7 @@ require 'openssl'
 require 'json'
 require 'hashr'
 require 'base64'
-require 'fileutils' # required by older ruby versions, auto-loaded by rubyv > 2 
+require 'fileutils' # required by older ruby versions, auto-loaded by ruby v > 2 
 
 # setting defaults (todo: other ciphers and digests are untested)
 DEFAULT_CRYPTOSET = {
@@ -33,6 +33,7 @@ DEFAULT_DATA = 'EMPTY'
 # extend Hash with methods to produce repeatble and consistant digests, todo: move to PreVault
 class Hash
 
+=begin
   # iterate over all keys and yield the key + a digest of the value and 
   def allkeys_valdigest( options = { :digest => DEFAULT_CRYPTOSET[ :vaultinfo_digest ] } )
     each_key do |key|
@@ -53,24 +54,27 @@ class Hash
     # sort them, because the order of a hash is unspecified, concatenate for the digest
     kdgs.sort.join
   end
+=end
   
-  def keyprefix_values( prefix: nil, separator: '.' )
+  def digestable( prefix: nil, separator: '.', glue: '/' )
 	# yields all values of an hash prefixed by the keys, used to create a digestable from an hash
-	# when no block is given, it will return a sorted array of the yields
+	# when no block is given, it will return a sorted array of the yields, joined with glue
 	# the goal is to create a string which is unique and reproducable so the digest is always the same if the hash is the same
-	# an hash doesn't have an defined order, so the output should be sorted en joined to create a digestable string
-	# if one or more of the vaules contains the seprator, this operation is not reversable, which is not a problem for a digest
+	# an hash doesn't have a defined order, so the output should be sorted en joined to create a digestable string
+	# if one or more of the vaules contains the separator, this operation is not reversable, which is not a problem for a digest
 	
-	# return sorted array of yielded values if no block is given (values are not sorted when yields are used in block!)
-	return to_enum( :keyprefix_values, { :prefix => prefix, :separator => separator } ).sort unless block_given?
+	# convert sorted array of yielded values if no block is given (values are not sorted when yields are used in block!)
+	# join the array in a single string (unique and reproducable), this is the return value 
+	return to_enum( :digestable, { :prefix => prefix, :separator => separator } ).sort.join( glue ) unless block_given?
 	
 	each_key do |key|
 	  if self[ key ].respond_to? ( :each )
 	    # call self with sub hash if it is enumerable
-		self[ key ].keyprefix_values( prefix: [ prefix, key.to_s ].compact.join( separator ), separator: separator ) { |out| yield out }
+	    # compact removes nil's so not everything wil start with the separator
+		self[ key ].digestable( prefix: [ prefix, key.to_s ].compact.join( separator ), separator: separator ) { |out| yield out }
 	  else
 	    # in all other cases we have a leaf
-		yield [ prefix, key.to_s, self[ key ] ].compact.join( separator ) 
+		yield [ prefix, key.to_s, self[ key ] ].compact.join( separator )
 	  end
 	end
   end
