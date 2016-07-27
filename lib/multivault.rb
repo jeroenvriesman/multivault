@@ -33,32 +33,9 @@ DEFAULT_DATA = 'EMPTY'
 # extend Hash with methods to produce repeatble and consistant digests, todo: move to PreVault
 class Hash
 
-=begin
-  # iterate over all keys and yield the key + a digest of the value and 
-  def allkeys_valdigest( options = { :digest => DEFAULT_CRYPTOSET[ :vaultinfo_digest ] } )
-    each_key do |key|
-      if self[ key ].respond_to? ( :each )
-        yield key.to_s
-        self[ key ].allkeys_valdigest{ |out| yield out }
-      else
-        # concatenate key and value
-        yield key.to_s + self[ key ]
-      end
-    end
-  end
-  
-  def digestable( options = { :digest => DEFAULT_CRYPTOSET[ :vaultinfo_digest ] } )
-    # collect the keys + value digests
-    kdgs = []
-    allkeys_valdigest( :digest => options[ :digest ] ) { |kdg| kdgs << kdg }
-    # sort them, because the order of a hash is unspecified, concatenate for the digest
-    kdgs.sort.join
-  end
-=end
-  
   def digestable( prefix: nil, separator: '.', glue: '/' )
 	# yields all values of an hash prefixed by the keys, used to create a digestable from an hash
-	# when no block is given, it will return a sorted array of the yields, joined with glue
+	# when no block is given, it will return a sorted concatenation of the yields, joined with glue
 	# the goal is to create a string which is unique and reproducable so the digest is always the same if the hash is the same
 	# an hash doesn't have a defined order, so the output should be sorted en joined to create a digestable string
 	# if one or more of the vaules contains the separator, this operation is not reversable, which is not a problem for a digest
@@ -84,11 +61,11 @@ end
 # this loads data into hashr, either from a file or from json data
 class PreVault < Hashr
 
-  def initialize( source = {} )
-    @original_filename = source[ :file ]
-    super( JSON.parse( IO.read( source[ :file ] ) ) ) if not source[ :file ].nil?
-    super( JSON.parse( source[ :json ] ) ) if not source[ :json ].nil?
-    super( source ) if source[ :file ].nil? and source[ :json ].nil?
+  def initialize( file: nil, json: nil, hash: nil )
+    @original_filename = file
+    super( JSON.parse( IO.read( file ) ) ) if not file.nil? # load from file
+    super( JSON.parse( json ) ) if not json.nil? # load from json
+    super( hash ) if not hash.nil? # load from hash
   end
 
   # todo: make private
@@ -126,7 +103,7 @@ class PreVault < Hashr
     self.validate_vaultinfo_valkey
     # check the signature of the vaultinfo 
     vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )
-    if @vaultinfo_validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data, :initvectors  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) )
+    if @vaultinfo_validation_key.verify( vaultinfo_digest, Base64.strict_decode64( self.signatures.vaultconfig_signature ), self.except( :signatures, :data, :initvectors  ).digestable )
       return true
     else
       raise "Vault info validation failed"
@@ -174,7 +151,7 @@ class PreVault < Hashr
     vaultinfo_signkeypair = OpenSSL::PKey::RSA.new( vaultinfo_signkey_cipher.update( Base64.strict_decode64( self.keysets.vaultinfo_signkey ) ) + vaultinfo_signkey_cipher.final )
     
     vaultinfo_digest = OpenSSL::Digest.new( self.cryptoset.vaultinfo_digest )    
-    self.signatures.vaultconfig_signature = Base64.strict_encode64( vaultinfo_signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data, :initvectors  ).digestable( :digest => self.cryptoset.vaultinfo_digest ) ) )
+    self.signatures.vaultconfig_signature = Base64.strict_encode64( vaultinfo_signkeypair.sign( vaultinfo_digest, self.except( :signatures, :data, :initvectors  ).digestable ) )
     
   end
   
@@ -200,7 +177,7 @@ class MultiVault < PreVault
   # it loads the current user key or fails if no key is present
   # action can be: :load => 'file', :create => 'new name'
   # example mv = Multivault.new( :action => { :load => 'somevault' } )  ( or with , :cryptoset => { .... }
-  def initialize( options = { :action => {}, :cryptoset => {} } )
+  def initialize( vaultname: nil, vaultfile: nil, cryptoset: nil ) # if vaultname is given, vault is created, if vaultfile is given vault is loaded from file
     # load current user key if it exists
     current_user_keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
     current_user_info_file = File.join( ENV['HOME'], '.multivault', 'user_info' )
@@ -217,18 +194,18 @@ class MultiVault < PreVault
       # cannot proceed without a keyfile
       raise "Current user does not have a keyfile, please create one"
     end    
-    # if action is load from file, then do so
-    super( :file => options[ :action ][ :load ]  ) if not options[ :action ][ :load ].nil?
+    # if action is load from file (vaultfile given), then do so
+    super( :file => vaultfile  ) if not vaultfile.nil?
     # or create new vault
     begin
       newvault = Hashr.new # PreVault.new doesn't work...?
       # set name
-      newvault.name = options[ :action ][ :create ]
+      newvault.name = vaultname
       # set cryptoset, merge default into cryptoset options
-      if options[ :cryptoset ].nil?
+      if cryptoset.nil?
         newvault.cryptoset = DEFAULT_CRYPTOSET
       else
-        newvault.cryptoset = DEFAULT_CRYPTOSET.merge( options[ :cryptoset ] )
+        newvault.cryptoset = DEFAULT_CRYPTOSET.merge( cryptoset )
       end
       # create the current user, will be the only user and owner initialiy
       newvault.users = { @user_info.name.to_sym => { :user_pubkey => Base64.strict_encode64( @current_user_keyset.public_key.to_der ) } }
@@ -301,10 +278,10 @@ class MultiVault < PreVault
       # all except the data and signatures themselves are used to create the signature
       # the signature is make with signkey
       vaultinfo_digest = OpenSSL::Digest.new( newvault.cryptoset.vaultinfo_digest )
-      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( vaultinfo_signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data, :initvectors  ).digestable( :digest => newvault.cryptoset.vaultinfo_digest ) ) )
+      newvault.signatures.vaultconfig_signature = Base64.strict_encode64( vaultinfo_signkeypair.sign( vaultinfo_digest, newvault.except( :signatures, :data, :initvectors  ).digestable ) )
       
-      super( newvault )
-    end if not options[ :action ][ :create ].nil?
+      super( hash: newvault )
+    end if not vaultname.nil?
   end
   
   def read_data
