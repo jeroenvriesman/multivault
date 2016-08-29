@@ -177,10 +177,10 @@ class MultiVault < PreVault
   # it loads the current user key or fails if no key is present
   # action can be: :load => 'file', :create => 'new name'
   # example mv = Multivault.new( :action => { :load => 'somevault' } )  ( or with , :cryptoset => { .... }
-  def initialize( vaultname: nil, vaultfile: nil, cryptoset: nil ) # if vaultname is given, vault is created, if vaultfile is given vault is loaded from file
+  def initialize( vaultname: nil, vaultfile: nil, cryptoset: nil, userkeydir: '.multivault' ) # if vaultname is given, vault is created, if vaultfile is given vault is loaded from file
     # load current user key if it exists
-    current_user_keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
-    current_user_info_file = File.join( ENV['HOME'], '.multivault', 'user_info' )
+    current_user_keyfile = File.join( ENV['HOME'], userkeydir, 'user_private_key' )
+    current_user_info_file = File.join( ENV['HOME'], userkeydir, 'user_info' )
     if File.exists?( current_user_keyfile )
       @current_user_keyset = OpenSSL::PKey::RSA.new File.read( current_user_keyfile )
       if File.exists?( current_user_info_file )
@@ -312,7 +312,7 @@ class MultiVault < PreVault
     
     raise "Must be owner to add user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
     # load request from file
-    access_request = PreVault.new( :file => request_file )
+    access_request = PreVault.new( file: request_file )
     
     # validate vault itself first (will also validate valkey)
     self.validate_vaultinfo
@@ -457,26 +457,28 @@ end
 
 class MVaultHelper < PreVault
   
-  def create_key( username )
+  
+  def create_key( username: nil, userkeydir: '.multivault' )
     # todo: ask user for password on private key
     # create key and write it if it doesn't exist
-    keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
+    username = ENV['USERNAME'] if username.nil?
+    keyfile = File.join( ENV['HOME'], userkeydir, 'user_private_key' )
     raise "Keyfile already exists, please use delete_key first" if File.exists?( keyfile )
     new_keyset = OpenSSL::PKey::RSA.new( 4096 )
     FileUtils.mkdir_p File.dirname keyfile
     open( keyfile, 'w' ) { |io| io.write( new_keyset.to_pem ) }
     # write user info
-    userfile = File.join( ENV['HOME'], '.multivault', 'user_info' )
+    userfile = File.join( ENV['HOME'], userkeydir, 'user_info' )
     open( userfile, 'w' ) { |io| io.write( JSON.pretty_generate( { :name => username } ) ) }
     FileUtils.chmod( "u=r,og-rwx", keyfile )
     FileUtils.chmod( "u=r,og-rwx", userfile )
     FileUtils.chmod( "u=rx,og-rwx", File.dirname( keyfile ) )
   end
   
-  def delete_key
-    keyfile = File.join( ENV['HOME'], '.multivault', 'user_private_key' )
-    userfile = File.join( ENV['HOME'], '.multivault', 'user_info' )
-    raise "Keyfile doesn't exists, cannot delete something which isn't there" if not File.exists?( keyfile )
+  def delete_key( userkeydir: '.multivault' )
+    keyfile = File.join( ENV['HOME'], userkeydir, 'user_private_key' )
+    userfile = File.join( ENV['HOME'], userkeydir, 'user_info' )
+    return "Keyfile doesn't exists, cannot delete something which isn't there" if not File.exists?( keyfile )
     FileUtils.chmod( "u=rwx", File.dirname( keyfile ) )
     FileUtils.chmod( "u=rw", keyfile )
     FileUtils.chmod( "u=rw", userfile )
@@ -490,8 +492,8 @@ class MVaultHelper < PreVault
     # todo: create two signatures when validation key becomes separate data and vault validation key
     # todo: sign the request (is that usefull without external pubkey source?)
     # the owner who adds the user should trust or validate the origin and content of the access request
-    vault = MultiVault.new( :action => { :load => vault_file } )
-    access_request = PreVault.new( { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
+    vault = MultiVault.new( vaultfile: vault_file } )
+    access_request = PreVault.new( hash: { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
     
     # use the private key of the current user to sign the vaultinfo validation key
     vaultinfo_valkey_digest = OpenSSL::Digest.new( vault.cryptoset.vaultinfo_valkey_digest )
