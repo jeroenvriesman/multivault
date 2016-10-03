@@ -155,11 +155,11 @@ class PreVault < Hashr
     
   end
   
-  def write_to_disk( options = { :filename => "#{self.name}.vault" } )
+  def write_to_disk( filename: "#{self.name}.vault" )
     # write the vault to disk
     # todo: maybe validate before writing?
-    options[ :filename ] = @original_filename if not @original_filename.nil?
-    File.open( options[ :filename ],"wb") do |f|
+    filename = @original_filename if not @original_filename.nil?
+    File.open( filename,"wb") do |f|
       f.write(JSON.pretty_generate(self))
     end
   end
@@ -309,6 +309,7 @@ class MultiVault < PreVault
   def add_user( request_file, options = { :make_owner => false } )
     
     # todo: check if vault name matches request
+    # todo: rights shoudl be split in vaultinfo and data write capabilities
     
     raise "Must be owner to add user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
     # load request from file
@@ -488,12 +489,12 @@ class MVaultHelper < PreVault
     Dir.rmdir( File.dirname( keyfile ) )
   end
   
-  def request_access( vault_file, request_file )
+  def request_access( vault_file: vault_file, request_file: request_file, userkeydir: '.multivault' )
     # creates a json file with the users' public key and a personal signature on the validation key
     # todo: create two signatures when validation key becomes separate data and vault validation key
     # todo: sign the request (is that usefull without external pubkey source?)
     # the owner who adds the user should trust or validate the origin and content of the access request
-    vault = MultiVault.new( vaultfile: vault_file )
+    vault = MultiVault.new( vaultfile: vault_file, userkeydir: userkeydir )
     access_request = PreVault.new( hash: { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
     
     # use the private key of the current user to sign the vaultinfo validation key
