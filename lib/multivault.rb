@@ -343,6 +343,7 @@ class MultiVault < PreVault
   def del_user( username )
     # deletes a user
     # todo: owner cannot delete self, sign function needs users' signkey_symkey
+    # todo: make new symkeys, or the revoeked user will be able to read the new vaults with on eof the old ones!
     
     raise "Must have vaultinfo write capabilities to delete user" if self.users.send( @user_info.name.to_sym ).vaultinfo_sign_symkey.nil?
     raise "No such user" if self.users.send( username.to_sym ).nil?
@@ -492,7 +493,7 @@ class MVaultHelper < PreVault
     # todo: create two signatures when validation key becomes separate data and vault validation key
     # todo: sign the request (is that usefull without external pubkey source?)
     # the owner who adds the user should trust or validate the origin and content of the access request
-    vault = MultiVault.new( vaultfile: vault_file } )
+    vault = MultiVault.new( vaultfile: vault_file )
     access_request = PreVault.new( hash: { :user_name => vault.current_user_name, :user_pubkey => vault.current_user_pubkey, :access_to => vault.name } )
     
     # use the private key of the current user to sign the vaultinfo validation key
