@@ -489,7 +489,7 @@ class MVaultHelper < PreVault
     Dir.rmdir( File.dirname( keyfile ) )
   end
   
-  def request_access( vault_file: vault_file, request_file: request_file, userkeydir: '.multivault' )
+  def request_access( vault_file: nil, request_file: nil, userkeydir: '.multivault' )
     # creates a json file with the users' public key and a personal signature on the validation key
     # todo: create two signatures when validation key becomes separate data and vault validation key
     # todo: sign the request (is that usefull without external pubkey source?)
